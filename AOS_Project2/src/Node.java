@@ -11,7 +11,7 @@ public class Node {
 	public static Hashtable<String,Socket> serverSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsForUsersArray = new Hashtable<String,Socket>();
 	public static ReadConfig config;
-	public Client client[];
+//	public Client client[];
 	public Server server;
 	
 	public void init(File file) {
@@ -63,8 +63,8 @@ public class Node {
 			try {	
 				if(config.nodetypes[j].equals("server") && !(config.hostnames[j].equals(InetAddress.getLocalHost().getHostName().toString()))) {
 
-					this.client[j] = new Client(config.hostnames[j], config.portnumbers[j]);
-					this.client[j].start();
+					Client client = new Client(config.hostnames[j], config.portnumbers[j]);
+					client.start();
 					
 				}
 			} catch (UnknownHostException e) {
