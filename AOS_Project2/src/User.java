@@ -27,6 +27,8 @@ public class User extends Thread {
 		try {
 			socket = new Socket(this.serverAddress, this.port);
 			
+			System.out.println("Connection with server " + this.serverAddress + " at port#" + this.port + "\n");
+			
 			Node.serverSocketsForUsersArray.put(this.socket.getInetAddress().getHostAddress().toString(), this.socket);
 			
 		} catch (UnknownHostException e) {

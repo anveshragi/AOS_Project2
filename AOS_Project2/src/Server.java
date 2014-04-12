@@ -22,13 +22,15 @@ public class Server extends Thread{
 		try {
 			socket = new ServerSocket(this.port);
 			
-//			System.out.println("Initializing server...\nServer on " + InetAddress.getLocalHost().getHostName() + " listening on port#" + this.port + "\n");
+			System.out.println("Initializing server...\nServer on " + InetAddress.getLocalHost().getHostName() + " listening on port#" + this.port + "\n");
 
 			while(true) {
 //				System.out.println("Entering Server Thread while loop... and it's thread number is ..." + Thread.currentThread().getName());
 				try {
 					this.clientSocket = socket.accept();
 					
+					System.out.println("At Server...Connection with client " + this.clientSocket.getInetAddress().getHostName() + " established\n");
+
 					Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
 
 				} catch (IOException e) {

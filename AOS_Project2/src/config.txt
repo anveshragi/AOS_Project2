@@ -8,8 +8,8 @@
 4 net05.utdallas.edu 5004 server # Host name and port number of node 4
 5 net06.utdallas.edu 5010 server # Host name and port number of node 5
 6 net07.utdallas.edu 5011 server # Host name and port number of node 6
-7 net08.utdallas.edu 5012 client # Host name and port number of node 7
-8 net09.utdallas.edu 5013 client # Host name and port number of node 8
-9 net11.utdallas.edu 5014 client # Host name and port number of node 9
-10 net12.utdallas.edu 5015 client # Host name and port number of node 10
-11 net13.utdallas.edu 5016 client # Host name and port number of node 11
+0 net08.utdallas.edu 5012 client # Host name and port number of node 7
+1 net09.utdallas.edu 5013 client # Host name and port number of node 8
+2 net11.utdallas.edu 5014 client # Host name and port number of node 9
+3 net12.utdallas.edu 5015 client # Host name and port number of node 10
+4 net13.utdallas.edu 5016 client # Host name and port number of node 11

@@ -26,7 +26,9 @@ public class Client extends Thread{
 		try {
 			socket = new Socket(this.serverAddress, this.port);
 			
-			Node.serverSocketsArray.put(this.socket.getInetAddress().getHostAddress().toString(), this.socket);
+			System.out.println("Connection with server " + this.serverAddress + " at port#" + this.port + "\n");
+
+			Node.serverSocketsArray.put(this.socket.getInetAddress().getHostAddress().toString(), this.socket);			
 			
 		} catch (UnknownHostException e) {
 			System.out.println(" Unknown hostname exception : " + e);

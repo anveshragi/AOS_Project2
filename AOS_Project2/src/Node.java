@@ -14,14 +14,14 @@ public class Node {
 //	public Client client[];
 	public Server server;
 	
-	public void init(File file) {
+	public void init(String fileName) {
 
 		try {
 			
 			// Read configuration file
 			config = new ReadConfig();
 			
-			config.read(file); // new File("config.txt")
+			config.read(new File(fileName)); // new File("config.txt")
 
 			for(int i = 0; i < config.nodeidentifiers.length; i++){
 
@@ -31,10 +31,11 @@ public class Node {
 						server = new Server(config.portnumbers[i]);
 						server.start();
 						
-						activateServerConnectionsWithUsers();
+						Thread.sleep(5000);
+						activateClientConnections();
 						
 					} else if(config.nodetypes[i].equals("client")) {
-						activateClientConnections();
+						activateUserConnections();
 					}
 				}
 			}
@@ -43,15 +44,15 @@ public class Node {
 		}		
 	}
 	
-	public void activateServerConnectionsWithUsers() {
+	public void activateUserConnections() {
 		for(int j = 0; j < config.nodeidentifiers.length; j++) {
 			try {	
-				if(config.nodetypes[j].equals("server") && !(config.hostnames[j].equals(InetAddress.getLocalHost().getHostName().toString()))) {
+				if(config.nodetypes[j].equals("server")) {
 
 					User user = new User(config.hostnames[j], config.portnumbers[j]);
 					user.start();					
 				}
-			} catch (UnknownHostException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}	
