@@ -1,4 +1,6 @@
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -7,25 +9,34 @@ import java.util.Hashtable;
 
 public class Node {
 
+	public static int node_num = 0;
 	public static Hashtable<String,Socket> clientSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsForUsersArray = new Hashtable<String,Socket>();
 	public static ReadConfig config;
 //	public Client client[];
 	public Server server;
+	public static File serverFile;
+	public static BufferedWriter bw;
 	
-	public void init(String fileName) {
+	public void init(String configFileName) {
 
 		try {
+			String filename = "File" + node_num + ".txt";
+//			serverFile = new File(filename);
+			
+			bw = new BufferedWriter(new FileWriter(filename,true));
 			
 			// Read configuration file
 			config = new ReadConfig();
 			
-			config.read(new File(fileName)); // new File("config.txt")
+			config.read(new File(configFileName)); // new File("config.txt")
 
 			for(int i = 0; i < config.nodeidentifiers.length; i++){
 
 				if(config.hostnames[i].equals(InetAddress.getLocalHost().getHostName().toString())) {
+					
+					node_num = config.nodeidentifiers[i];
 					
 					if(config.nodetypes[i].equals("server")) {
 						server = new Server(config.portnumbers[i]);

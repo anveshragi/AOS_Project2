@@ -4,8 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-
-public class Server extends Thread{
+public class Server extends Thread {
 	
 	private int port;
 	private Socket clientSocket = null;
@@ -33,6 +32,9 @@ public class Server extends Thread{
 
 					Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
 
+					ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
+					receiverThread.start();
+					
 				} catch (IOException e) {
 					System.out.println("Error connecting with client " + this.clientSocket.getInetAddress().getHostName() + " : " + e);
 				} 
