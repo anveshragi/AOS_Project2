@@ -30,32 +30,34 @@ public class ReceiverThread extends Thread{
 						String read = this.input.readLine();		
 						if(read != null){
 							System.out.println("\nMessage Received : " + read.toString() + "\n");
-
-//							String[] tokens = read.split(" ");
+					
+							String[] tokens = read.split(" ");
+							
+							if(tokens[0].equals("write")) {
+								int hashCode = read.hashCode();
+								int hashValue = hashCode%Node.num_of_servers;
+								System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
+								
+								receive_write(tokens, hashValue);
+							}							
 						}	
-				}	
-				
-			}					
-
+				}					
+			}	
 		} catch (NumberFormatException | IOException e) {
 			e.printStackTrace();
 		} 
 	}
 
-	public void receive_write(String read) {
+	public void receive_write(String[] tokens, int hashValue) {
 
 		try {
 
-			int hashCode = read.hashCode();
-			int hashValue = hashCode%7;
-			System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
-
 			if(hashValue == Node.node_num) {						
-				Node.bw.write(read.toString() + "\n");
+				Node.bw.write(tokens[1] + " " + tokens[2] + "\n");
 			} else if(hashValue == Node.node_num - 1){
-				forward_object(read, hashValue);
+				forward_object(tokens, hashValue);
 			} else if(hashValue == Node.node_num - 2) {
-				forward_object(read, hashValue);
+				forward_object(tokens, hashValue);
 			} else {
 				System.out.println("Invalid hashValue of the object sent to this serve ... ");
 			}	
@@ -65,7 +67,7 @@ public class ReceiverThread extends Thread{
 		}
 	}
 
-	public void forward_object(String object, int dest_node_num) {
+	public void forward_object(String[] tokens, int dest_node_num) {
 
 		try {
 
@@ -83,7 +85,7 @@ public class ReceiverThread extends Thread{
 
 				if(index == dest_node_num) {
 					StringBuffer buffer = new StringBuffer();
-					buffer.append(object);
+					buffer.append(tokens[0]);
 
 					serverSocketForRespectiveClient = Node.serverSocketsArray.get(clientSocket.getKey().toString());
 

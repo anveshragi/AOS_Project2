@@ -10,6 +10,7 @@ public class ReadConfig {
 	String[] hostnames;
 	int[] portnumbers;
 	String[] nodetypes;
+	int num_of_servers;
 	
 	public void read(File file) throws Exception
 	{
@@ -40,6 +41,12 @@ public class ReadConfig {
 			
 			line = sc.nextLine();
 			//			System.out.println("second line : " + line.toString());
+			StringTokenizer secondLine = new StringTokenizer(line);
+			
+			String noOfServers = secondLine.nextToken();
+			num_of_servers = Integer.parseInt(noOfServers);
+			
+			line = sc.nextLine();
 			
 			while (sc.hasNextLine()) {
 				

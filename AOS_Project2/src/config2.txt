@@ -1,8 +1,10 @@
 # Any text following # should be ignored
-5 # Total number of nodes
+6 # Total number of nodes
+4 # Number of servers
 # Node identifier - Host name - port number
 0 net01.utdallas.edu 5000 server # Host name and port number of node 0
 1 net02.utdallas.edu 5001 server # Host name and port number of node 1
 2 net03.utdallas.edu 5002 server # Host name and port number of node 2
-3 net04.utdallas.edu 5003 client # Host name and port number of node 3
+3 net04.utdallas.edu 5003 server # Host name and port number of node 3
 4 net05.utdallas.edu 5004 client # Host name and port number of node 4
+5 net06.utdallas.edu 5005 client # Host name and port number of node 5
