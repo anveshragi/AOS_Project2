@@ -60,7 +60,7 @@ public class Node {
 						activateUserConnections();
 
 						StringBuffer buffer = new StringBuffer();
-						buffer.append("write ");			// identifier/type of the message object
+						buffer.append("WRITE ");			// identifier/type of the message object
 						buffer.append("key from ");			// key of the object
 						buffer.append("value from ");		// value of the object
 						buffer.append(Node.node_num + " ");	// node component in Vector clock
@@ -108,35 +108,61 @@ public class Node {
 		}	
 	}
 
-	public void put(String object) {
+	public void put(final String object) {
 
-		try {
+		(new Thread() {
+			@Override
+			public synchronized void run() {
 
-			int hashCode = object.hashCode();
-			int hashValue = hashCode%Node.num_of_servers;
-			System.out.println("hashCode : "+ hashCode + " hashValue : " + hashValue);
+				try {
+					int hashCode = object.hashCode();
+					int hashValue = hashCode%Node.num_of_servers;
+					System.out.println("hashCode : "+ hashCode + " hashValue : " + hashValue);
 
-			Socket serverSocket = null;
-			PrintWriter output = null;
-			Iterator<Entry<String, Socket>> iter = Node.serverSocketsForUsersArray.entrySet().iterator();
-			Entry<String, Socket> serverSocketEntry;
-			
-			while(iter.hasNext()) {
-				serverSocketEntry = iter.next();
-				
-				int index = Integer.valueOf(serverSocketEntry.getValue().getInetAddress().getHostName().toString().substring(3,5))-1;
+					Socket serverSockets[] = new Socket[3];
+					int numOfAvailableServers = 0;
+					PrintWriter output = null;
+					Iterator<Entry<String, Socket>> iter = Node.serverSocketsForUsersArray.entrySet().iterator();
+					Entry<String, Socket> serverSocketEntry = null;
 
-				if(index == hashValue) {
-					serverSocket = serverSocketEntry.getValue();
-					
-					output = new PrintWriter(serverSocket.getOutputStream(), true);
-					output.println(object);
-				} 				
+					while(iter.hasNext()) {
+						serverSocketEntry = iter.next();
+
+						int index = Integer.valueOf(serverSocketEntry.getValue().getInetAddress().getHostName().toString().substring(3,5))-1;
+
+						if(index == hashValue || index == hashValue+1 || index == hashValue+2) {
+							if(index == hashValue){
+								serverSockets[0] = serverSocketEntry.getValue();
+								if(serverSockets[0].isConnected()) {
+									numOfAvailableServers++;
+								}
+							} else if(index == hashValue+1) {
+								serverSockets[1] = serverSocketEntry.getValue();
+								if(serverSockets[1].isConnected()) {
+									numOfAvailableServers++;
+								}
+							} else if(index == hashValue+2) {
+								serverSockets[2] = serverSocketEntry.getValue();
+								if(serverSockets[2].isConnected()) {
+									numOfAvailableServers++;
+								}
+							}
+						} 		
+					}
+
+					if(numOfAvailableServers>=2) {
+
+						for(int i = 0; i < numOfAvailableServers;i++) {
+							if(serverSockets[i].isConnected()) {
+								output = new PrintWriter(serverSockets[i].getOutputStream(), true);
+								output.println(object);
+							}
+						}				
+					}			
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
+		}).start();
+	}	
 }

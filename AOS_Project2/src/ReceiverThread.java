@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -27,20 +28,14 @@ public class ReceiverThread extends Thread{
 		try {
 			if(this.clientSocket != null) {
 				while(true) {					
-						String read = this.input.readLine();		
-						if(read != null){
-							System.out.println("\nMessage Received : " + read.toString() + "\n");
-					
-							String[] tokens = read.split(" ");
-							
-							if(tokens[0].equals("write")) {
-								int hashCode = read.hashCode();
-								int hashValue = hashCode%Node.num_of_servers;
-								System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
-								
-								receive_write(tokens, hashValue);
-							}							
-						}	
+					String read = this.input.readLine();		
+					if(read != null){
+						System.out.println("\nMessage Received : " + read.toString() + "\n");
+
+						if(read.contains("WRITE")) {																
+							receive_write(read);
+						}							
+					}	
 				}					
 			}	
 		} catch (NumberFormatException | IOException e) {
@@ -48,16 +43,19 @@ public class ReceiverThread extends Thread{
 		} 
 	}
 
-	public void receive_write(String[] tokens, int hashValue) {
+	public void receive_write(String read) {
 
-		try {
+		try {			
+			int hashCode = read.hashCode();
+			int hashValue = hashCode%Node.num_of_servers;
+			System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
 
-			if(hashValue == Node.node_num) {						
+			String[] tokens = read.split(" ");
+
+			if((Integer.valueOf(InetAddress.getLocalHost().getHostName().toString().substring(3,5))-1) == hashValue) {
 				Node.bw.write(tokens[1] + " " + tokens[2] + "\n");
-			} else if(hashValue == Node.node_num - 1){
-				forward_object(tokens, hashValue);
-			} else if(hashValue == Node.node_num - 2) {
-				forward_object(tokens, hashValue);
+			} else if (((Integer.valueOf(InetAddress.getLocalHost().getHostName().toString().substring(3,5))-1) == hashValue + 1) || ((Integer.valueOf(InetAddress.getLocalHost().getHostName().toString().substring(3,5))-1) == hashValue + 2)) {				
+				processDataVersion(hashValue, tokens);
 			} else {
 				System.out.println("Invalid hashValue of the object sent to this serve ... ");
 			}	
@@ -66,6 +64,56 @@ public class ReceiverThread extends Thread{
 			e.printStackTrace();
 		}
 	}
+
+	public void processDataVersion(int firstReplicaHashValue, String[] tokens) {
+
+		try {
+			int localsourceNodeNum = Integer.valueOf(tokens[3]);
+			int localObjectDataVersion = Integer.valueOf(tokens[4]);
+			int version = checkDataVersionAtFirstReplica(firstReplicaHashValue, localsourceNodeNum, localObjectDataVersion);
+
+			if(version == 0 || version == 1) {
+				Node.bw.write(tokens[1] + " " + tokens[2] + "\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// Return 0 if object versions are same; 
+	// Return -1 if local object version is less than that at first replica
+	// Return 1 if local object version is greater than that at first replica
+	public int checkDataVersionAtFirstReplica(int firstReplicaHashValue, int localsourceNodeNum, int localObjectDataVersion) {
+
+		Socket firstReplicasocket = null;		
+		int remoteSourceNodeNum	= 0;
+		int remoteObjectDataVersion = 0;
+		
+		// Logic to extract data from firstreplica server's file
+//		String firstReplicaHostName = "net0"+firstReplicaHashValue+".utdallas.edu";
+
+		if(localObjectDataVersion < remoteObjectDataVersion) {
+			return -1;
+		} else if(localObjectDataVersion > remoteObjectDataVersion) {
+			return 1;
+		} else if(localObjectDataVersion == remoteObjectDataVersion) {
+			return 0;
+		}
+		
+		return -1;
+	}
+
+
+
+
+
+
+
+
+
+
+
 
 	public void forward_object(String[] tokens, int dest_node_num) {
 
