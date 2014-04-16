@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+
 public class ReceiverThread extends Thread{
 
 	private Socket clientSocket;
@@ -15,7 +16,6 @@ public class ReceiverThread extends Thread{
 		this.clientSocket = clientSocket;
 		try {
 			this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -23,37 +23,46 @@ public class ReceiverThread extends Thread{
 
 	public synchronized void run() {
 
-		//		System.out.println("ReceiverThread " + Thread.currentThread().getName());
-
+		//				System.out.println("ReceiverThread " + Thread.currentThread().getName());
 		try {
-			while(true) {
-				try {
-					String read = this.input.readLine();				
-					System.out.println("\nMessage Received : " + read.toString() + "\n");
+			if(this.clientSocket != null) {
+				while(true) {					
+						String read = this.input.readLine();		
+						if(read != null){
+							System.out.println("\nMessage Received : " + read.toString() + "\n");
 
-					String[] tokens = read.split(" ");
+//							String[] tokens = read.split(" ");
+						}	
+				}	
+				
+			}					
 
-					int hashCode = read.hashCode();
-					int hashValue = hashCode%7;
-					System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
-
-					if(hashValue == Node.node_num) {
-						
-						Node.bw.write(read.toString() + "\n");
-					} else if(hashValue == Node.node_num - 1){
-						forward_object(read, hashValue);
-					} else if(hashValue == Node.node_num - 2) {
-						forward_object(read, hashValue);
-					} else {
-						System.out.println("Invalid hashValue of the object sent to this serve ... ");
-					}				
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException | IOException e) {
 			e.printStackTrace();
 		} 
+	}
+
+	public void receive_write(String read) {
+
+		try {
+
+			int hashCode = read.hashCode();
+			int hashValue = hashCode%7;
+			System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
+
+			if(hashValue == Node.node_num) {						
+				Node.bw.write(read.toString() + "\n");
+			} else if(hashValue == Node.node_num - 1){
+				forward_object(read, hashValue);
+			} else if(hashValue == Node.node_num - 2) {
+				forward_object(read, hashValue);
+			} else {
+				System.out.println("Invalid hashValue of the object sent to this serve ... ");
+			}	
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void forward_object(String object, int dest_node_num) {

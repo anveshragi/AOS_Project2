@@ -10,20 +10,19 @@ import java.util.Hashtable;
 public class Node {
 
 	public static int node_num = 0;
+	public static int counter;
 	public static Hashtable<String,Socket> clientSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsForUsersArray = new Hashtable<String,Socket>();
 	public static ReadConfig config;
-//	public Client client[];
 	public Server server;
-	public static File serverFile;
 	public static BufferedWriter bw;
+	
 	
 	public void init(String configFileName) {
 
 		try {
-			String filename = "File" + node_num + ".txt";
-//			serverFile = new File(filename);
+			String filename = "File" + Node.node_num + ".txt";
 			
 			bw = new BufferedWriter(new FileWriter(filename,true));
 			
@@ -47,6 +46,8 @@ public class Node {
 						
 					} else if(config.nodetypes[i].equals("client")) {
 						activateUserConnections();
+//						Message msg = 
+//						put();
 					}
 				}
 			}

@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -30,6 +31,17 @@ public class User extends Thread {
 			System.out.println("Connection with server " + this.serverAddress + " at port#" + this.port + "\n");
 			
 			Node.serverSocketsForUsersArray.put(this.socket.getInetAddress().getHostAddress().toString(), this.socket);
+			
+			PrintWriter output = new PrintWriter(this.socket.getOutputStream(), true);
+			
+			StringBuffer buffer = new StringBuffer();
+			buffer.append("write ");			// identifier/type of the message object
+			buffer.append("key from ");			// key of the object
+			buffer.append("value from ");		// value of the object
+			buffer.append(Node.node_num + " ");	// node component in Vector clock
+			buffer.append(Node.counter);		// counter component in Vector clock
+			
+			output.println(buffer.toString());
 			
 		} catch (UnknownHostException e) {
 			System.out.println(" Unknown hostname exception : " + e);
