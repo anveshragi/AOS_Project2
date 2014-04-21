@@ -31,6 +31,12 @@ public class User extends Thread {
 			
 			Node.serverSocketsForUsersArray.put(this.socket.getInetAddress().getHostAddress().toString(), this.socket);
 			
+//			Message msg = new Message("write","key","value", new VectorClock(Node.node_num,Node.counter));
+//			ObjectOutputStream output = new ObjectOutputStream(this.socket.getOutputStream());
+//			output.writeObject(msg);
+//			output.flush();
+//			
+//			System.out.println("message sent!!");
 			
 		} catch (UnknownHostException e) {
 			System.out.println(" Unknown hostname exception : " + e);

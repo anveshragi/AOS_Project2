@@ -16,11 +16,16 @@ public class Message implements Serializable {
 		this.vectorClock = vectorClock;
 	}
 	
+	public Message(String msg_identifier, String key, String value) {
+		super();
+		this.msg_identifier = msg_identifier;
+		this.key = key;
+		this.value = value;
+	}
+	
 	public Message() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
-
 	
 	public String getMsg_identifier() {
 		return msg_identifier;

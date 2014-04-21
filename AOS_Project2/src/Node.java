@@ -2,7 +2,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -18,7 +18,9 @@ public class Node {
 	public static int num_of_servers = 0;
 	public static int num_of_users = 0;
 	public static int num_of_total_nodes = 0;
+	public static final int replicaFactor = 3;
 	public static Hashtable<String,Socket> clientSocketsArray = new Hashtable<String,Socket>();
+	public static Hashtable<String,Socket> userSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsForUsersArray = new Hashtable<String,Socket>();
 	public static ReadConfig config;
@@ -44,7 +46,7 @@ public class Node {
 
 				if(config.hostnames[i].equals(InetAddress.getLocalHost().getHostName().toString())) {
 
-					node_num = config.nodeidentifiers[i];
+					Node.node_num = config.nodeidentifiers[i];
 
 					if(config.nodetypes[i].equals("server")) {
 						server = new Server(config.portnumbers[i]);
@@ -59,15 +61,17 @@ public class Node {
 					} else if(config.nodetypes[i].equals("client")) {
 						activateUserConnections();
 
-						StringBuffer buffer = new StringBuffer();
-						buffer.append("WRITE ");			// identifier/type of the message object
-						buffer.append("key from ");			// key of the object
-						buffer.append("value from ");		// value of the object
-						buffer.append(Node.node_num + " ");	// node component in Vector clock
-						buffer.append(Node.counter);		// counter component in Vector clock
+						VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
+						Message message = new Message("WRITE","key","value",vectorClock);
+						
+//						StringBuffer buffer = new StringBuffer();
+//						buffer.append("WRITE ");			// identifier/type of the message object
+//						buffer.append("key from ");			// key of the object
+//						buffer.append("value from ");		// value of the object
+//						buffer.append(Node.node_num + " ");	// node component in Vector clock
+//						buffer.append(Node.counter);		// counter component in Vector clock
 
-						//						Message msg = 
-						put(buffer.toString());
+						put(message);
 
 						Node.counter++;
 					}
@@ -108,54 +112,52 @@ public class Node {
 		}	
 	}
 
-	public void put(final String object) {
+	public static boolean isConnected(ObjectOutputStream oos) {
+		
+		Message msg = new Message("TEST","","",new VectorClock(0,0));
+		try {
+			oos.writeObject(msg);
+			oos.writeObject(msg);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		return true;
+	}
+	
+	public void put(final Message object) {
 
 		(new Thread() {
 			@Override
 			public synchronized void run() {
 
 				try {
-					int hashCode = object.hashCode();
+					int hashCode = object.getKey().hashCode();
 					int hashValue = hashCode%Node.num_of_servers;
 					System.out.println("hashCode : "+ hashCode + " hashValue : " + hashValue);
 
-					Socket serverSockets[] = new Socket[3];
+					String serverNames[] = new String[Node.replicaFactor];
+					Socket serverSockets[] = new Socket[Node.replicaFactor];
+					ObjectOutputStream output[] = new ObjectOutputStream[Node.replicaFactor];
 					int numOfAvailableServers = 0;
-					PrintWriter output = null;
-					Iterator<Entry<String, Socket>> iter = Node.serverSocketsForUsersArray.entrySet().iterator();
-					Entry<String, Socket> serverSocketEntry = null;
+					
+					for(int i = 0; i < Node.replicaFactor; i++) {
+						serverNames[i] = Node.config.hostnames[hashValue+i];
+						
+						serverSockets[i] = Node.serverSocketsForUsersArray.get(serverNames[i]);
+						output[i] = (ObjectOutputStream) serverSockets[i].getOutputStream();
+						if(isConnected(output[i])) {
+							numOfAvailableServers++;
+						}
+					}				
 
-					while(iter.hasNext()) {
-						serverSocketEntry = iter.next();
+					if(numOfAvailableServers>=Node.replicaFactor-1) {
 
-						int index = Integer.valueOf(serverSocketEntry.getValue().getInetAddress().getHostName().toString().substring(3,5))-1;
-
-						if(index == hashValue || index == hashValue+1 || index == hashValue+2) {
-							if(index == hashValue){
-								serverSockets[0] = serverSocketEntry.getValue();
-								if(serverSockets[0].isConnected()) {
-									numOfAvailableServers++;
-								}
-							} else if(index == hashValue+1) {
-								serverSockets[1] = serverSocketEntry.getValue();
-								if(serverSockets[1].isConnected()) {
-									numOfAvailableServers++;
-								}
-							} else if(index == hashValue+2) {
-								serverSockets[2] = serverSocketEntry.getValue();
-								if(serverSockets[2].isConnected()) {
-									numOfAvailableServers++;
-								}
-							}
-						} 		
-					}
-
-					if(numOfAvailableServers>=2) {
-
-						for(int i = 0; i < numOfAvailableServers;i++) {
-							if(serverSockets[i].isConnected()) {
-								output = new PrintWriter(serverSockets[i].getOutputStream(), true);
-								output.println(object);
+						for(int i = 0; i < Node.replicaFactor;i++) {
+							if(isConnected(output[i])) {
+								output[i].writeObject(object);
+								output[i].flush();
 							}
 						}				
 					}			
@@ -166,3 +168,44 @@ public class Node {
 		}).start();
 	}	
 }
+
+
+
+
+//Iterator<Entry<String, Socket>> iter = Node.serverSocketsForUsersArray.entrySet().iterator();
+//Entry<String, Socket> serverSocketEntry = null;
+//
+//while(iter.hasNext()) {
+//	serverSocketEntry = iter.next();						
+//
+//	int index;
+//		
+//		if(config.hostnames[i].equals(serverSocketEntry.getValue().getInetAddress().getHostName().toString())) {
+//			index = i;
+//			
+//			if(index == hashValue || index == hashValue+1 || index == hashValue+2) {
+//				if(index == hashValue){
+//					serverSockets[0] = serverSocketEntry.getValue();
+//					output[0] = (ObjectOutputStream) serverSockets[0].getOutputStream();
+//					if(isConnected(output[0])) {
+//						numOfAvailableServers++;
+//					}
+//				} else if(index == hashValue+1) {
+//					serverSockets[1] = serverSocketEntry.getValue();
+//					output[1] = (ObjectOutputStream) serverSockets[1].getOutputStream();
+//					if(isConnected(output[1])) {
+//						numOfAvailableServers++;
+//					}
+//				} else if(index == hashValue+2) {
+//					serverSockets[2] = serverSocketEntry.getValue();
+//					output[2] = (ObjectOutputStream) serverSockets[2].getOutputStream();
+//					if(isConnected(output[2])) {
+//						numOfAvailableServers++;
+//					}
+//				}
+//			} 
+//		}
+//
+//	
+////	int index = Integer.valueOf(serverSocketEntry.getValue().getInetAddress().getHostName().toString().substring(3,5))-1;						
+//}

@@ -30,11 +30,18 @@ public class Server extends Thread {
 					
 					System.out.println("At Server...Connection with client " + this.clientSocket.getInetAddress().getHostName() + " established\n");
 
-					Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
-
-					ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
-					receiverThread.start();
-					
+					for(int i = 0; i < Node.config.nodeidentifiers.length; i++) {
+						if(Node.config.hostnames[i].equals(this.clientSocket.getInetAddress().getHostName().toString())) {
+							if(Node.config.nodetypes[i].equals("client")) {
+								Node.userSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
+								
+								ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
+								receiverThread.start();
+							} else if(Node.config.nodetypes[i].equals("server")) {
+								Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
+							}
+						}
+					}			
 				} catch (IOException e) {
 					System.out.println("Error connecting with client " + this.clientSocket.getInetAddress().getHostName() + " : " + e);
 				} 
