@@ -33,13 +33,16 @@ public class Server extends Thread {
 					for(int i = 0; i < Node.config.nodeidentifiers.length; i++) {
 						if(Node.config.hostnames[i].equals(this.clientSocket.getInetAddress().getHostName().toString())) {
 							if(Node.config.nodetypes[i].equals("client")) {
-								Node.userSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
+								Node.userSocketsArray.put(this.clientSocket.getInetAddress().getHostName().toString(),this.clientSocket);
 								
-								ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
-								receiverThread.start();
 							} else if(Node.config.nodetypes[i].equals("server")) {
-								Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostAddress().toString(),this.clientSocket);
+
+								Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostName().toString(),this.clientSocket);
+								
 							}
+							
+							ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
+							receiverThread.start();
 						}
 					}			
 				} catch (IOException e) {
