@@ -36,6 +36,7 @@ public class User extends Thread {
 			output = new ObjectOutputStream(this.socket.getOutputStream());
 			Node.outputStreamsOfserverSocketsForUsers.put(this.socket.getInetAddress().getHostName().toString(), this.output);
 			
+
 //			Message msg = new Message("write","key","value", new VectorClock(Node.node_num,Node.counter));
 //			ObjectOutputStream output = new ObjectOutputStream(this.socket.getOutputStream());
 //			output.writeObject(msg);
