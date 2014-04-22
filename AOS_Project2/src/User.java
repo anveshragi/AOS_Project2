@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -8,6 +9,7 @@ public class User extends Thread {
 	private String serverAddress;
 	private int port;
 	private Socket socket = null;
+	private ObjectOutputStream output = null;
 
 	public User(Socket skt) {
 		super();
@@ -30,6 +32,9 @@ public class User extends Thread {
 			System.out.println("Connection with server " + this.serverAddress + " at port#" + this.port + "\n");
 			
 			Node.serverSocketsForUsersArray.put(this.socket.getInetAddress().getHostName().toString(), this.socket);
+			
+			output = new ObjectOutputStream(this.socket.getOutputStream());
+			Node.outputStreamsOfserverSocketsForUsers.put(this.socket.getInetAddress().getHostName().toString(), this.output);
 			
 //			Message msg = new Message("write","key","value", new VectorClock(Node.node_num,Node.counter));
 //			ObjectOutputStream output = new ObjectOutputStream(this.socket.getOutputStream());

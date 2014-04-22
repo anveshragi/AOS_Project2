@@ -21,9 +21,12 @@ public class Node {
 	public static Hashtable<String,Socket> userSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsArray = new Hashtable<String,Socket>();
 	public static Hashtable<String,Socket> serverSocketsForUsersArray = new Hashtable<String,Socket>();
+	public static Hashtable<String,ObjectOutputStream> outputStreamsOfserverSocketsForClients = new Hashtable<String,ObjectOutputStream>();
+	public static Hashtable<String,ObjectOutputStream> outputStreamsOfserverSocketsForUsers = new Hashtable<String,ObjectOutputStream>();
+	
 	public static ReadConfig config;
 	public Server server;
-	public static BufferedWriter bw;
+//	public static BufferedWriter bw;
 
 
 	public void init(String configFileName) {
@@ -50,9 +53,6 @@ public class Node {
 						server = new Server(config.portnumbers[i]);
 						server.start();
 
-						String filename = "File" + Node.node_num + ".txt";						
-						bw = new BufferedWriter(new FileWriter(filename,true));
-
 						Thread.sleep(5000);
 						activateClientConnections();
 
@@ -74,6 +74,21 @@ public class Node {
 		}		
 	}
 
+	public static void writeToServersFile(Message object) {
+		
+		try {
+			String filename = "File" + Node.node_num + ".txt";						
+			BufferedWriter bw = new BufferedWriter(new FileWriter(filename,true));
+			
+			bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
+			
+			bw.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void activateUserConnections() {
 		for(int j = 0; j < config.nodeidentifiers.length; j++) {
 			try {	
@@ -130,7 +145,6 @@ public class Node {
 					System.out.println("hashCode : " + hashCode + " hashValue : " + hashValue);
 
 					String serverNames[] = new String[Node.replicaFactor];
-					Socket serverSockets[] = new Socket[Node.replicaFactor];
 					ObjectOutputStream output[] = new ObjectOutputStream[Node.replicaFactor];
 					int numOfAvailableServers = 0;
 					
@@ -144,8 +158,7 @@ public class Node {
 					for(int i = 0; i < Node.replicaFactor; i++) {
 						
 						serverNames[i] = Node.config.hostnames[(hashValue+i)%Node.num_of_servers];
-						serverSockets[i] = Node.serverSocketsForUsersArray.get(serverNames[i]);
-						output[i] = new ObjectOutputStream(serverSockets[i].getOutputStream());
+						output[i] = Node.outputStreamsOfserverSocketsForUsers.get(serverNames[i]);
 						
 						if(isConnected(output[i])) {
 							numOfAvailableServers++;

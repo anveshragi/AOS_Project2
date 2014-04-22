@@ -15,8 +15,8 @@ public class Server extends Thread {
 		this.port = port;
 	}
 
-
-	public synchronized void run() {
+	@Override
+	public void run() {
 
 		try {
 			socket = new ServerSocket(this.port);
@@ -36,15 +36,14 @@ public class Server extends Thread {
 								Node.userSocketsArray.put(this.clientSocket.getInetAddress().getHostName().toString(),this.clientSocket);
 								
 							} else if(Node.config.nodetypes[i].equals("server")) {
-
 								Node.clientSocketsArray.put(this.clientSocket.getInetAddress().getHostName().toString(),this.clientSocket);
-								
-							}
-							
-							ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
-							receiverThread.start();
+							}							
 						}
-					}			
+					}
+					
+					ReceiverThread receiverThread = new ReceiverThread(this.clientSocket);
+					receiverThread.start();					
+					
 				} catch (IOException e) {
 					System.out.println("Error connecting with client " + this.clientSocket.getInetAddress().getHostName() + " : " + e);
 				} 

@@ -12,26 +12,24 @@ import java.util.Map.Entry;
 public class ReceiverThread extends Thread{
 
 	public Socket clientSocket;
-	public ObjectInputStream in;
+	public ObjectInputStream in = null;
 	public HashMap<String,String> hashMap = new HashMap<String,String>();
 	//	private BufferedReader input;
 
-	public ReceiverThread(Socket clientSocket) {
-		this.clientSocket = clientSocket;
+	public ReceiverThread(Socket socket) {
+		this.clientSocket = socket;
+		
 		try {
-			System.out.println("client socket received by receiver thread : " + this.clientSocket);
 			//			this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-			this.in = new ObjectInputStream(this.clientSocket.getInputStream());
-
+			in = new ObjectInputStream(clientSocket.getInputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public synchronized void run() {
+	@Override
+	public void run() {
 
-		System.out.println("In receiver thread ... ");
-		
 		while(true) {
 			
 			try {
@@ -57,57 +55,60 @@ public class ReceiverThread extends Thread{
 
 	public void receive_ack(Message object) {
 		
-		try {					
 				// Received ack from primary or secondary, it writes the object to server's file & removes if any hashmap entry exists for that object
-				Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
+				Node.writeToServersFile(object);
+//				Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
 				
 				if(hashMap.containsKey(object.getKey())) {
 					hashMap.remove(object.getKey());
 				}
-				
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
 	}
 
 	public void receive_write(Message object) {
 
 		try {			
+			ObjectOutputStream oos = null;
+			Message objectAck = null;
+			
 			int hashCode = object.getKey().hashCode();
 			int hashValue = hashCode%Node.num_of_servers;
 			System.out.println("hashCode : "+hashCode + " hashValue : " + hashValue);
 
 			if(InetAddress.getLocalHost().getHostName().toString().equals(Node.config.hostnames[hashValue])) {
+				
 				// Writes the object to file & sends ack to other two replicas
-				Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
+				Node.writeToServersFile(object);
+				
+//				Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
 
-				Socket socket = Node.serverSocketsArray.get(Node.config.hostnames[(hashValue+1)%Node.num_of_servers]);
-				System.out.println("secondary socket : " + socket);
-				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				Message objectAck = object;
+				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+1)%Node.num_of_servers]);
+				objectAck = object;
 				objectAck.setMsg_identifier("ACK");
 				oos.writeObject(objectAck);
 
-				Socket socket2 = Node.serverSocketsArray.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
-				System.out.println("secondary socket : " + socket2);
-				ObjectOutputStream oos2 = new ObjectOutputStream(socket2.getOutputStream());
-				oos2.writeObject(objectAck);
+				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
+				oos.writeObject(objectAck);
 
 				//						processDataVersion(hashValue, object);
 
 			} else if(InetAddress.getLocalHost().getHostName().toString().equals(Node.config.hostnames[(hashValue+1)%Node.num_of_servers])) {				
-				Socket socket = Node.serverSocketsArray.get(Node.config.hostnames[hashValue]);
-				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+				
+				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[hashValue]);
+				
 				// If it is connected to primary server
 				if(Node.isConnected(oos)) {
+					
 					hashMap.put(object.getKey(), object.getValue());
 					System.out.println("put in hashmap ... ");
+					
 				} else {											// if not connected to primary, it acts as primary temporarily & sends ack to third replica server
-					Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
-					socket = Node.serverSocketsArray.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
-					oos = new ObjectOutputStream(socket.getOutputStream());
-					Message objectAck = object;
+					
+					Node.writeToServersFile(object);
+//					Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
+					
+					oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
+					objectAck = object;
 					objectAck.setMsg_identifier("ACK");
 					oos.writeObject(objectAck);
 				}					
@@ -127,18 +128,14 @@ public class ReceiverThread extends Thread{
 
 	public void processDataVersion(int firstReplicaHashValue, Message object) {
 
-		try {
 			int localsourceNodeNum = object.getVectorClock().getNode();
 			int localObjectDataVersion = object.getVectorClock().getCounter();
 			int version = checkDataVersionAtFirstReplica(firstReplicaHashValue, localsourceNodeNum, localObjectDataVersion);
 
 			if(version == 0 || version == 1) {
-				Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
+				Node.writeToServersFile(object);
+//				Node.bw.write(object.getKey() + " " + object.getValue() + " " + object.getVectorClock().getNode() + object.getVectorClock().getCounter() + "\n");
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	// Return 0 if object versions are same; 
