@@ -58,6 +58,10 @@ public class Node {
 
 					} else if(config.nodetypes[i].equals("client")) {
 
+						//UserServer thread will start the Server thread for users
+						UserServer userServer = new UserServer(config.portnumbers[i]);
+						userServer.start();
+						
 						activateUserConnections();
 
 						acceptCommands();
@@ -73,9 +77,12 @@ public class Node {
 		for(int j = 0; j < config.nodeidentifiers.length; j++) {
 			try {	
 				if(config.nodetypes[j].equals("server")) {
-
+					
+					//User thread will start client part of users
 					User user = new User(config.hostnames[j], config.portnumbers[j]);
 					user.start();					
+					
+					
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -102,14 +109,18 @@ public class Node {
 	public static boolean isConnected(ObjectOutputStream oos) {
 
 		Message msg = new Message("TEST","","",new VectorClock(0,0));
-		try {
+		
+		try{	
+			if(oos != null){
 			oos.writeObject(msg);
-			oos.writeObject(msg);
+//			System.out.println("one write over inside isconnected");
+			//oos.writeObject(msg);
+			oos.flush();
+			}else return false;
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return false;
 		}
-
 		return true;
 	}
 
@@ -134,6 +145,9 @@ public class Node {
 				case 3 : 
 					readCommand();
 					break;
+				case 4:
+					 // total ordering condition
+					 // take a 
 				default: 
 					System.out.println("Enter valid option ... ");
 					break;
@@ -223,8 +237,8 @@ public class Node {
 				Message message = new Message("READ",objectKey,"",vectorClock);
 				
 				int hashCode = objectKey.hashCode();
-				int hashValue = hashCode%Node.num_of_servers;
-				System.out.println("hashCode : " + hashCode + " hashValue : " + hashValue);
+				int hashValue = Math.abs(hashCode%Node.num_of_servers);
+				System.out.println("hashCode : " + hashCode + " hashValue or read : " + hashValue);
 				
 				Random rnd = new Random();		
 				int randomSeed = rnd.nextInt(((hashValue+2)-hashValue)+1)+hashValue;
@@ -288,12 +302,15 @@ public class Node {
 
 						serverNames[i] = Node.config.hostnames[(hashValue+i)%Node.num_of_servers];
 						output[i] = Node.outputStreamsOfserverSocketsForUsers.get(serverNames[i]);
-
-						if(isConnected(output[i])) {
+						System.out.println("oos : " + output[i].toString());
+						boolean isconnected =isConnected(output[i]); 
+						isconnected = isConnected(output[i]);
+						if(isconnected ) {
+							System.out.println( (hashValue+i)%Node.num_of_servers + "" + isconnected);
 							numOfAvailableServers++;
 						}
 					}				
-
+					System.out.println("Num of available server: "+numOfAvailableServers);
 					if(numOfAvailableServers>=Node.replicaFactor-1) {
 
 						for(int i = 0; i < Node.replicaFactor;i++) {
@@ -302,7 +319,10 @@ public class Node {
 								output[i].flush();
 							}
 						}				
-					}			
+					}	
+					else{
+						System.out.println("Not enough number of connections to perform the operation");
+					}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

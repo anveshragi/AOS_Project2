@@ -55,7 +55,9 @@ public class ReceiverThread extends Thread{
 					System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
 					receive_updateack(msg);
 				} else if(msg.getMsg_identifier().equals("READ")) {
-
+					System.out.println("Received read form client: "+ this.clientSocket.getInetAddress().getHostName()+"  "+this.clientSocket.getPort()+" "+this.clientSocket.getLocalPort());
+					System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
+					receive_read(msg);
 				}
 
 			} catch (ClassNotFoundException e) {
@@ -65,7 +67,46 @@ public class ReceiverThread extends Thread{
 			}
 		}
 	}
-
+	public void receive_read(Message object){
+		String value = readFromServersFile(object.getKey());
+		if(value != null){
+			try {
+				int portno=0;
+				for(int i = 0 ;i<Node.config.nodeidentifiers.length;i++){
+					if(Node.config.hostnames[i].equals(this.clientSocket.getInetAddress().getHostName())){
+						portno = Node.config.portnumbers[i];
+					}
+				}
+				ObjectOutputStream oosUser = null;
+				Socket userServerSocket = new Socket(this.clientSocket.getInetAddress().getHostName(), portno);
+				
+				oosUser = new ObjectOutputStream(userServerSocket.getOutputStream());
+				
+				// Preparing readReply message for the user server
+				Message readReply = new Message();
+				readReply.setMsg_identifier("ReadReply");
+				readReply.setKey(object.getKey());
+				readReply.setValue(value);
+				
+				readReply.setVectorClock(object.getVectorClock());
+				
+				// Writing the message on to the output stream of user server
+				oosUser.writeObject(readReply);
+				System.out.println("Message written: "+readReply.getKey() + "  "+ readReply.getValue());
+				
+				// Close connections when no longer needed
+				//oosUser.close();
+				//userServerSocket.close();
+				
+			} catch (IOException e) {                          //exception handled when connecting to user server socket
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else{
+			System.out.println("\n Key not found");
+			
+		}
+	}
 	public void receive_insertack(Message object) {
 
 		// Received ack from primary or secondary, it writes the object to server's file & removes if any hashmap entry exists for that object
@@ -110,10 +151,14 @@ public class ReceiverThread extends Thread{
 				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+1)%Node.num_of_servers]);
 				objectAck = object;
 				objectAck.setMsg_identifier("INSERTACK");
+				if(Node.isConnected(oos)) {
 				oos.writeObject(objectAck);
+				}
 
 				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
+				if(Node.isConnected(oos)) {
 				oos.writeObject(objectAck);
+				}
 
 				//						processDataVersion(hashValue, object);
 
@@ -135,7 +180,9 @@ public class ReceiverThread extends Thread{
 					oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
 					objectAck = object;
 					objectAck.setMsg_identifier("INSERTACK");
+					if(Node.isConnected(oos)) {
 					oos.writeObject(objectAck);
+					}
 				}					
 			} else if(InetAddress.getLocalHost().getHostName().toString().equals(Node.config.hostnames[(hashValue+2)%Node.num_of_servers])) {
 
@@ -170,11 +217,14 @@ public class ReceiverThread extends Thread{
 				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+1)%Node.num_of_servers]);
 				objectAck = object;
 				objectAck.setMsg_identifier("UPDATEACK");
+				if(Node.isConnected(oos)) {
 				oos.writeObject(objectAck);
+				}
 
+				if(Node.isConnected(oos)) {
 				oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
 				oos.writeObject(objectAck);
-
+				}
 				//						processDataVersion(hashValue, object);
 
 			} else if(InetAddress.getLocalHost().getHostName().toString().equals(Node.config.hostnames[(hashValue+1)%Node.num_of_servers])) {				
@@ -195,7 +245,9 @@ public class ReceiverThread extends Thread{
 					oos = Node.outputStreamsOfserverSocketsForClients.get(Node.config.hostnames[(hashValue+2)%Node.num_of_servers]);
 					objectAck = object;
 					objectAck.setMsg_identifier("UPDATEACK");
+					if(Node.isConnected(oos)) {
 					oos.writeObject(objectAck);
+					}
 				}					
 			} else if(InetAddress.getLocalHost().getHostName().toString().equals(Node.config.hostnames[(hashValue+2)%Node.num_of_servers])) {
 
@@ -214,7 +266,7 @@ public class ReceiverThread extends Thread{
 	}
 
 
-	public static void writeToServersFile(Message object) {
+	public synchronized static void writeToServersFile(Message object) {
 
 		try {
 			String filename = "File" + Node.node_num + ".txt";						
@@ -253,7 +305,7 @@ public class ReceiverThread extends Thread{
 		return null;
 	}
 
-	public static void updateToServersFile(Message object) {
+	public synchronized static void updateToServersFile(Message object) {
 
 		try {
 			String oldfilename = "File" + Node.node_num + ".txt";
@@ -261,16 +313,21 @@ public class ReceiverThread extends Thread{
 
 			BufferedReader reader = new BufferedReader(new FileReader(oldfilename));
 			BufferedWriter bw = new BufferedWriter(new FileWriter(newfilename,true));
-
+			String newline= System.getProperty("line.separator");
 			String line = null;
 			while ((line = reader.readLine()) != null) {
+				
 				String[] tokens = line.split(" ");
-
+                String temp = null;
 				if(tokens[0].equals(object.getKey())) {
-					line.replace(tokens[1], object.getValue());
+					System.out.println("Update function: String replaced: "+ tokens[1]+" with: "+ object.getValue());
+					temp = line.replace(tokens[1], object.getValue());
+					System.out.println("new string is :" + temp);
 				}
-
-				bw.write(line + "\n");
+				if(temp != null)
+					bw.write(temp + newline);
+				else
+					bw.write(line + newline);
 			}
 
 			reader.close();
