@@ -61,7 +61,7 @@ public class Node {
 						//UserServer thread will start the Server thread for users
 						UserServer userServer = new UserServer(config.portnumbers[i]);
 						userServer.start();
-						
+
 						activateUserConnections();
 
 						acceptCommands();
@@ -72,17 +72,17 @@ public class Node {
 			e.printStackTrace();
 		}		
 	}
-	
+
 	public void activateUserConnections() {
 		for(int j = 0; j < config.nodeidentifiers.length; j++) {
 			try {	
 				if(config.nodetypes[j].equals("server")) {
-					
+
 					//User thread will start client part of users
 					User user = new User(config.hostnames[j], config.portnumbers[j]);
 					user.start();					
-					
-					
+
+
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -109,14 +109,18 @@ public class Node {
 	public static boolean isConnected(ObjectOutputStream oos) {
 
 		Message msg = new Message("TEST","","",new VectorClock(0,0));
-		
+
 		try{	
 			if(oos != null){
-			oos.writeObject(msg);
-//			System.out.println("one write over inside isconnected");
-			//oos.writeObject(msg);
-			oos.flush();
-			}else return false;
+				oos.reset();
+				oos.writeObject(msg);
+				oos.flush();
+				oos.reset();
+				oos.writeObject(msg);
+				oos.flush();
+			} 
+			else 
+				return false;
 		} catch (IOException e) {
 			//e.printStackTrace();
 			return false;
@@ -145,15 +149,15 @@ public class Node {
 				case 3 : 
 					readCommand();
 					break;
-//				case 4:
-//					totalOrderingTestCase();
-//					break;
+					//				case 4:
+					//					totalOrderingTestCase();
+					//					break;
 				default: 
 					System.out.println("Enter valid option ... ");
 					break;
 				}
 
-//				br.close();
+				//				br.close();
 			}	
 
 		} catch (IOException e) {
@@ -167,7 +171,7 @@ public class Node {
 			Random rnd = new Random();		
 			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
 			System.out.println("Thread sleeps for : " + randomSeed + " secs");
-			
+
 			System.out.println("INSERT the object as a pair --- Key Value ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -179,9 +183,9 @@ public class Node {
 
 			VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
 			Message message = new Message("INSERT",tokens[0],tokens[1],vectorClock);
-			
+
 			Thread.sleep(randomSeed*1000);
-			
+
 			put(message);
 
 			Node.counter++;
@@ -199,7 +203,7 @@ public class Node {
 			Random rnd = new Random();		
 			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
 			System.out.println("Thread sleeps for : " + randomSeed + " secs");
-			
+
 			System.out.println("UPDATE the object as a pair --- Key Value ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -211,9 +215,9 @@ public class Node {
 
 			VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
 			Message message = new Message("UPDATE",tokens[0],tokens[1],vectorClock);			
-			
+
 			Thread.sleep(randomSeed*1000);
-			
+
 			put(message);
 
 		} catch (IOException e) {
@@ -229,7 +233,7 @@ public class Node {
 			Random rnd = new Random();		
 			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
 			System.out.println("Thread sleeps for : " + randomSeed + " secs");
-			
+
 			System.out.println("Enter the Key of the object to be READ : ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -237,7 +241,7 @@ public class Node {
 
 			objectKey = br.readLine();				
 			Thread.sleep(randomSeed*1000);
-			
+
 			get(objectKey);
 
 		} catch (IOException e) {
@@ -249,7 +253,7 @@ public class Node {
 	}	
 
 	public void totalOrderingTestCase() {
-		
+
 		try {
 			while(true) {
 
@@ -261,10 +265,10 @@ public class Node {
 
 				Random rnd = new Random();		
 				int randomSeed = rnd.nextInt(((5)-1)+1)+1;
-				
+
 				Thread.sleep(randomSeed*1000);
 				System.out.println("Thread sleep for : " + randomSeed*1000);
-				
+
 				switch(Integer.valueOf(command)) {
 
 				case 1 :
@@ -281,7 +285,7 @@ public class Node {
 					break;
 				}
 
-//				br.close();
+				//				br.close();
 			}	
 
 		} catch (IOException e) {
@@ -289,60 +293,60 @@ public class Node {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
-	
+
 	public void get(final String objectKey) {
 
 		(new Thread() {
 			@Override
 			public synchronized void run() {
-				
+
 				try {
-					
-				VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
-				Message message = new Message("READ",objectKey,"",vectorClock);
-				
-				int hashCode = objectKey.hashCode();
-				int hashValue = Math.abs(hashCode%Node.num_of_servers);
-				System.out.println("hashCode : " + hashCode + " hashValue or read : " + hashValue);
-				
-				Random rnd = new Random();		
-				int randomSeed = rnd.nextInt(((hashValue+2)-hashValue)+1)+hashValue;
-				
-				String serverName = Node.config.hostnames[randomSeed%Node.num_of_servers];
-				ObjectOutputStream output = Node.outputStreamsOfserverSocketsForUsers.get(serverName);
-				
-				if(isConnected(output)) {
-					output.writeObject(message);
-				} else {
-					serverName = Node.config.hostnames[hashValue%Node.num_of_servers];
-					output = Node.outputStreamsOfserverSocketsForUsers.get(serverName);
-					
+
+					VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
+					Message message = new Message("READ",objectKey,"",vectorClock);
+
+					int hashCode = objectKey.hashCode();
+					int hashValue = Math.abs(hashCode%Node.num_of_servers);
+					System.out.println("hashCode : " + hashCode + " hashValue or read : " + hashValue);
+
+					Random rnd = new Random();		
+					int randomSeed = rnd.nextInt(((hashValue+2)-hashValue)+1)+hashValue;
+
+					String serverName = Node.config.hostnames[randomSeed%Node.num_of_servers];
+					ObjectOutputStream output = Node.outputStreamsOfserverSocketsForUsers.get(serverName);
+
 					if(isConnected(output)) {
 						output.writeObject(message);
 					} else {
-						serverName = Node.config.hostnames[hashValue+1%Node.num_of_servers];
+						serverName = Node.config.hostnames[hashValue%Node.num_of_servers];
 						output = Node.outputStreamsOfserverSocketsForUsers.get(serverName);
-						
+
 						if(isConnected(output)) {
 							output.writeObject(message);
 						} else {
-							serverName = Node.config.hostnames[hashValue+2%Node.num_of_servers];
+							serverName = Node.config.hostnames[hashValue+1%Node.num_of_servers];
 							output = Node.outputStreamsOfserverSocketsForUsers.get(serverName);
-							
+
 							if(isConnected(output)) {
 								output.writeObject(message);
 							} else {
-								System.out.println("No copy of the requested object is available ... ");
-								return;
+								serverName = Node.config.hostnames[hashValue+2%Node.num_of_servers];
+								output = Node.outputStreamsOfserverSocketsForUsers.get(serverName);
+
+								if(isConnected(output)) {
+									output.writeObject(message);
+								} else {
+									System.out.println("No copy of the requested object is available ... ");
+									return;
+								}
 							}
 						}
 					}
-				}
 
-				// Logic to read from server's file and get back the value
-				
+					// Logic to read from server's file and get back the value
+
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -369,9 +373,9 @@ public class Node {
 
 						serverNames[i] = Node.config.hostnames[(hashValue+i)%Node.num_of_servers];
 						output[i] = Node.outputStreamsOfserverSocketsForUsers.get(serverNames[i]);
-						System.out.println("oos : " + output[i].toString());
-						boolean isconnected =isConnected(output[i]); 
-						isconnected = isConnected(output[i]);
+//						System.out.println("oos : " + output[i].toString());
+						boolean isconnected = isConnected(output[i]); 
+//						isconnected = isConnected(output[i]);
 						if(isconnected) {
 							System.out.println( (hashValue+i)%Node.num_of_servers + "" + isconnected);
 							numOfAvailableServers++;
@@ -388,7 +392,7 @@ public class Node {
 						}				
 					}	
 					else{
-						System.out.println("Not enough number of connections to perform the operation");
+						System.out.println("Not enough number of replicas to perform the operation");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
