@@ -29,7 +29,7 @@ public class UserServer extends Thread {
 					try {
 						this.clientSocket = socket.accept();
 						
-						System.out.println("At Server...Connection with client " + this.clientSocket.getInetAddress().getHostName() + " established\n");
+//						System.out.println("At Server...Connection with client " + this.clientSocket.getInetAddress().getHostName() + " established\n");
 						
 						Thread.sleep(0);
 						
@@ -42,9 +42,9 @@ public class UserServer extends Thread {
 						//System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
 						if(msg.getMsg_identifier().equals("ReadReply")) {
 							System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
-						}
-						
-											
+						} else if(msg.getMsg_identifier().equals("keyExists")) {
+							System.out.println("Key already exists in the server : " + this.clientSocket.getInetAddress().getHostName() + ", updating the existing key with given value " + msg.getValue());
+						}										
 						
 					} catch ( ClassNotFoundException e) {
 						System.out.println("Error connecting with client " + this.clientSocket.getInetAddress().getHostName() + " : " + e);

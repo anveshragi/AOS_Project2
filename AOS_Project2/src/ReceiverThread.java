@@ -19,6 +19,7 @@ public class ReceiverThread extends Thread{
 	public Socket clientSocket;
 	public ObjectInputStream in = null;
 	public HashMap<String,String> hashMap = new HashMap<String,String>();
+	private Socket userServerSocket;
 	//	private BufferedReader input;
 
 	public ReceiverThread(Socket socket) {
@@ -55,7 +56,7 @@ public class ReceiverThread extends Thread{
 					System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
 					receive_updateack(msg);
 				} else if(msg.getMsg_identifier().equals("READ")) {
-					System.out.println("Received read form client: "+ this.clientSocket.getInetAddress().getHostName()+"  "+this.clientSocket.getPort()+" "+this.clientSocket.getLocalPort());
+//					System.out.println("Received read form client: "+ this.clientSocket.getInetAddress().getHostName()+"  "+this.clientSocket.getPort()+" "+this.clientSocket.getLocalPort());
 					System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
 					receive_read(msg);
 				}
@@ -78,7 +79,7 @@ public class ReceiverThread extends Thread{
 					}
 				}
 				ObjectOutputStream oosUser = null;
-				Socket userServerSocket = new Socket(this.clientSocket.getInetAddress().getHostName(), portno);
+				userServerSocket = new Socket(this.clientSocket.getInetAddress().getHostName(), portno);
 				
 				oosUser = new ObjectOutputStream(userServerSocket.getOutputStream());
 				
@@ -99,7 +100,6 @@ public class ReceiverThread extends Thread{
 				//userServerSocket.close();
 				
 			} catch (IOException e) {                          //exception handled when connecting to user server socket
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}else{
@@ -134,6 +134,34 @@ public class ReceiverThread extends Thread{
 	public void receive_write(Message object) {
 
 		try {			
+			
+			if(checkObjectInFile(object)) {
+				
+				int portno=0;
+				for(int i = 0 ;i<Node.config.nodeidentifiers.length;i++){
+					if(Node.config.hostnames[i].equals(this.clientSocket.getInetAddress().getHostName())){
+						portno = Node.config.portnumbers[i];
+					}
+				}
+				ObjectOutputStream oosUser = null;
+				userServerSocket = new Socket(this.clientSocket.getInetAddress().getHostName(), portno);
+				
+				oosUser = new ObjectOutputStream(userServerSocket.getOutputStream());
+				
+				// Preparing readReply message for the user server
+				Message keyExists = new Message();
+				keyExists.setMsg_identifier("keyExists");
+				keyExists.setKey(object.getKey());
+				keyExists.setValue(object.getValue());				
+				keyExists.setVectorClock(object.getVectorClock());
+				
+				// Writing the message on to the output stream of user server
+				oosUser.writeObject(keyExists);
+				
+				receive_update(object);
+				
+			} else {
+			
 			ObjectOutputStream oos = null;
 			Message objectAck = null;
 
@@ -191,9 +219,10 @@ public class ReceiverThread extends Thread{
 				System.out.println("put in hashmap ... ");
 
 			} else {
-				System.out.println("Invalid hashValue of the object sent to this serve ... ");
+				System.out.println("Invalid hashValue of the object sent to this server ... ");
 			}	
 
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -265,6 +294,29 @@ public class ReceiverThread extends Thread{
 
 	}
 
+	public synchronized boolean checkObjectInFile(Message object) {
+		
+		try {
+			String filename = "File" + Node.node_num + ".txt";			
+			@SuppressWarnings("resource")
+			BufferedReader reader = new BufferedReader(new FileReader(filename));
+
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				String[] tokens = line.split(" ");
+
+				if(tokens[0].equals(object.getKey())) {
+					return true;
+				}
+			}
+			reader.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return false;
+	}
 
 	public synchronized static void writeToServersFile(Message object) {
 
@@ -276,6 +328,7 @@ public class ReceiverThread extends Thread{
 
 			bw.close();
 
+			System.out.println("Time when object written to file " + System.currentTimeMillis());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -313,7 +366,7 @@ public class ReceiverThread extends Thread{
 
 			BufferedReader reader = new BufferedReader(new FileReader(oldfilename));
 			BufferedWriter bw = new BufferedWriter(new FileWriter(newfilename,true));
-			String newline= System.getProperty("line.separator");
+//			String newline= System.getProperty("line.separator");
 			String line = null;
 			while ((line = reader.readLine()) != null) {
 				
@@ -324,10 +377,14 @@ public class ReceiverThread extends Thread{
 					temp = line.replace(tokens[1], object.getValue());
 					System.out.println("new string is :" + temp);
 				}
-				if(temp != null)
-					bw.write(temp + newline);
-				else
-					bw.write(line + newline);
+				if(temp != null) {
+					bw.write(temp);
+					bw.newLine();
+				}
+				else {
+					bw.write(line);
+					bw.newLine();
+				}					
 			}
 
 			reader.close();

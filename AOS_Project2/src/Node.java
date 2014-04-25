@@ -145,9 +145,9 @@ public class Node {
 				case 3 : 
 					readCommand();
 					break;
-				case 4:
-					 // total ordering condition
-					 // take a 
+//				case 4:
+//					totalOrderingTestCase();
+//					break;
 				default: 
 					System.out.println("Enter valid option ... ");
 					break;
@@ -164,6 +164,10 @@ public class Node {
 	public void insertCommand() {
 
 		try {
+			Random rnd = new Random();		
+			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+			System.out.println("Thread sleeps for : " + randomSeed + " secs");
+			
 			System.out.println("INSERT the object as a pair --- Key Value ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -175,12 +179,16 @@ public class Node {
 
 			VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
 			Message message = new Message("INSERT",tokens[0],tokens[1],vectorClock);
-
+			
+			Thread.sleep(randomSeed*1000);
+			
 			put(message);
 
 			Node.counter++;
 
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -188,6 +196,10 @@ public class Node {
 	public void updateCommand() {
 
 		try {
+			Random rnd = new Random();		
+			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+			System.out.println("Thread sleeps for : " + randomSeed + " secs");
+			
 			System.out.println("UPDATE the object as a pair --- Key Value ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -198,11 +210,15 @@ public class Node {
 			String[] tokens = object.split(" ");
 
 			VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
-			Message message = new Message("UPDATE",tokens[0],tokens[1],vectorClock);
-
+			Message message = new Message("UPDATE",tokens[0],tokens[1],vectorClock);			
+			
+			Thread.sleep(randomSeed*1000);
+			
 			put(message);
 
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -210,21 +226,72 @@ public class Node {
 	public void readCommand() {
 
 		try {
+			Random rnd = new Random();		
+			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+			System.out.println("Thread sleeps for : " + randomSeed + " secs");
+			
 			System.out.println("Enter the Key of the object to be READ : ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			String objectKey;
 
-			objectKey = br.readLine();			
-
+			objectKey = br.readLine();				
+			Thread.sleep(randomSeed*1000);
+			
 			get(objectKey);
 
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
 	}	
 
+	public void totalOrderingTestCase() {
+		
+		try {
+			while(true) {
+
+				System.out.println("---------Testing Total Ordering Case ---------");
+				System.out.println("Enter 1 for INSERT, 2 for UPDATE, 3 for READ an object : ");
+				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+				String command = br.readLine();
+
+				Random rnd = new Random();		
+				int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+				
+				Thread.sleep(randomSeed*1000);
+				System.out.println("Thread sleep for : " + randomSeed*1000);
+				
+				switch(Integer.valueOf(command)) {
+
+				case 1 :
+					insertCommand();
+					break;
+				case 2 : 
+					updateCommand();
+					break;
+				case 3 : 
+					readCommand();
+					break;
+				default: 
+					System.out.println("Enter valid option ... ");
+					break;
+				}
+
+//				br.close();
+			}	
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
 	public void get(final String objectKey) {
 
 		(new Thread() {
@@ -305,7 +372,7 @@ public class Node {
 						System.out.println("oos : " + output[i].toString());
 						boolean isconnected =isConnected(output[i]); 
 						isconnected = isConnected(output[i]);
-						if(isconnected ) {
+						if(isconnected) {
 							System.out.println( (hashValue+i)%Node.num_of_servers + "" + isconnected);
 							numOfAvailableServers++;
 						}
