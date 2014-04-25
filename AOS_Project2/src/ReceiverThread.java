@@ -328,7 +328,7 @@ public class ReceiverThread extends Thread{
 
 			bw.close();
 
-			System.out.println("Time when object written to file " + System.currentTimeMillis());
+//			System.out.println("Time when object written to file " + System.currentTimeMillis());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -129,8 +129,10 @@ public class Node {
 	}
 
 	public void acceptCommands() {
-
+		
 		try {
+			Thread.sleep(2000);
+			
 			while(true) {
 
 				System.out.println("Enter 1 for INSERT, 2 for UPDATE, 3 for READ an object : ");
@@ -157,10 +159,13 @@ public class Node {
 					break;
 				}
 
+				Thread.sleep(2000);
 				//				br.close();
 			}	
 
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -168,9 +173,9 @@ public class Node {
 	public void insertCommand() {
 
 		try {
-			Random rnd = new Random();		
-			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
-			System.out.println("Thread sleeps for : " + randomSeed + " secs");
+//			Random rnd = new Random();		
+//			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+//			System.out.println("Thread sleeps for : " + randomSeed + " secs");
 
 			System.out.println("INSERT the object as a pair --- Key Value ");
 
@@ -184,8 +189,9 @@ public class Node {
 			VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
 			Message message = new Message("INSERT",tokens[0],tokens[1],vectorClock);
 
-			Thread.sleep(randomSeed*1000);
-
+//			Thread.sleep(randomSeed*1000);
+			Thread.sleep(0);
+			
 			put(message);
 
 			Node.counter++;
@@ -200,9 +206,9 @@ public class Node {
 	public void updateCommand() {
 
 		try {
-			Random rnd = new Random();		
-			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
-			System.out.println("Thread sleeps for : " + randomSeed + " secs");
+//			Random rnd = new Random();		
+//			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+//			System.out.println("Thread sleeps for : " + randomSeed + " secs");
 
 			System.out.println("UPDATE the object as a pair --- Key Value ");
 
@@ -216,8 +222,9 @@ public class Node {
 			VectorClock vectorClock = new VectorClock(Node.node_num,Node.counter);
 			Message message = new Message("UPDATE",tokens[0],tokens[1],vectorClock);			
 
-			Thread.sleep(randomSeed*1000);
-
+//			Thread.sleep(randomSeed*1000);
+			Thread.sleep(0);
+			
 			put(message);
 
 		} catch (IOException e) {
@@ -230,18 +237,20 @@ public class Node {
 	public void readCommand() {
 
 		try {
-			Random rnd = new Random();		
-			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
-			System.out.println("Thread sleeps for : " + randomSeed + " secs");
+//			Random rnd = new Random();		
+//			int randomSeed = rnd.nextInt(((5)-1)+1)+1;
+//			System.out.println("Thread sleeps for : " + randomSeed + " secs");
 
 			System.out.println("Enter the Key of the object to be READ : ");
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			String objectKey;
 
-			objectKey = br.readLine();				
-			Thread.sleep(randomSeed*1000);
-
+			objectKey = br.readLine();		
+			
+//			Thread.sleep(randomSeed*1000);
+			Thread.sleep(0);
+			
 			get(objectKey);
 
 		} catch (IOException e) {
@@ -377,11 +386,11 @@ public class Node {
 						boolean isconnected = isConnected(output[i]); 
 //						isconnected = isConnected(output[i]);
 						if(isconnected) {
-							System.out.println( (hashValue+i)%Node.num_of_servers + "" + isconnected);
+							System.out.println( "Replica " + i + " with node identifier(server) " + (hashValue+i)%Node.num_of_servers + " is available ");
 							numOfAvailableServers++;
 						}
 					}				
-					System.out.println("Num of available server: "+numOfAvailableServers);
+					System.out.println("Num of available replicas : "+numOfAvailableServers);
 					if(numOfAvailableServers>=Node.replicaFactor-1) {
 
 						for(int i = 0; i < Node.replicaFactor;i++) {

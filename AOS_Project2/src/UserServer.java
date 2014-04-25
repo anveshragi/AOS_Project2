@@ -43,7 +43,7 @@ public class UserServer extends Thread {
 						if(msg.getMsg_identifier().equals("ReadReply")) {
 							System.out.println("message received : " + msg.getMsg_identifier() + " "+ msg.getKey() + " "+ msg.getValue() + " "+ msg.getVectorClock().getNode() + " "+ msg.getVectorClock().getCounter());
 						} else if(msg.getMsg_identifier().equals("keyExists")) {
-							System.out.println("Key already exists in the server : " + this.clientSocket.getInetAddress().getHostName() + ", updating the existing key with given value " + msg.getValue());
+//							System.out.println("Key already exists in the server : " + this.clientSocket.getInetAddress().getHostName() + ", updating the existing key with given value " + msg.getValue());
 						}										
 						
 					} catch ( ClassNotFoundException e) {
